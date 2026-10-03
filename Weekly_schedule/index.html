@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weekly Schedule</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <header class="header">
+        <div class="header-left">
+            <h1>Weekly Schedule</h1>
+        </div>
+
+        <div class="week-control">
+            <button id="prevWeek">‹</button>
+            <button id="todayButton">今日</button>
+            <span id="weekLabel"></span>
+            <button id="nextWeek">›</button>
+        </div>
+    </header>
+
+    <main class="schedule-wrapper">
+        <div class="schedule">
+
+            <div class="corner"></div>
+
+            <div id="dayHeader" class="day-header"></div>
+
+            <div id="timeColumn" class="time-column"></div>
+
+            <div id="calendarGrid" class="calendar-grid"></div>
+
+            <div id="eventsLayer" class="events-layer"></div>
+
+        </div>
+    </main>
+
+    <!-- 予定追加・編集モーダル -->
+    <div id="modal" class="modal hidden">
+        <div class="modal-content">
+
+            <h2 id="modalTitle">予定を追加</h2>
+
+            <label>
+                予定名
+                <input type="text" id="eventTitle" placeholder="例：プログラミング">
+            </label>
+
+            <label>
+                日付
+                <input type="date" id="eventDate">
+            </label>
+
+            <div class="time-inputs">
+                <label>
+                    開始
+                    <input type="time" id="startTime" value="09:00">
+                </label>
+
+                <label>
+                    終了
+                    <input type="time" id="endTime" value="10:00">
+                </label>
+            </div>
+
+            <label>
+                色
+                <div class="color-list">
+                    <button class="color-option selected" data-color="#6C8EF5"></button>
+                    <button class="color-option" data-color="#F58A8A"></button>
+                    <button class="color-option" data-color="#69C99B"></button>
+                    <button class="color-option" data-color="#F2C94C"></button>
+                    <button class="color-option" data-color="#B084F5"></button>
+                    <button class="color-option" data-color="#F59D5C"></button>
+                </div>
+            </label>
+
+            <div class="modal-buttons">
+                <button id="deleteButton" class="delete-button hidden">
+                    削除
+                </button>
+
+                <div>
+                    <button id="cancelButton">キャンセル</button>
+                    <button id="saveButton" class="save-button">保存</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script src="main.js"></script>
+</body>
+</html>
