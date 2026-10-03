@@ -17,79 +17,80 @@ let events = JSON.parse(
 );
 
 let editingEventId = null;
+
 let selectedColor = "#6C8EF5";
 
-const dayHeader = document.getElementById("dayHeader");
-const timeColumn = document.getElementById("timeColumn");
-const calendarGrid = document.getElementById("calendarGrid");
-const eventsLayer = document.getElementById("eventsLayer");
-
-const weekLabel = document.getElementById("weekLabel");
-
 const modal = document.getElementById("modal");
+
 const modalTitle = document.getElementById("modalTitle");
 
 const eventTitle = document.getElementById("eventTitle");
+
 const eventDate = document.getElementById("eventDate");
 
 const startTime = document.getElementById("startTime");
+
 const endTime = document.getElementById("endTime");
 
-const saveButton = document.getElementById("saveButton");
-const cancelButton = document.getElementById("cancelButton");
-const deleteButton = document.getElementById("deleteButton");
+const repeatType = document.getElementById("repeatType");
 
-const prevWeek = document.getElementById("prevWeek");
-const nextWeek = document.getElementById("nextWeek");
-const todayButton = document.getElementById("todayButton");
+const weeklyOptions =
+    document.getElementById("weeklyOptions");
 
+const repeatUntil =
+    document.getElementById("repeatUntil");
 
-// ==============================
-// 初期化
-// ==============================
+const deleteButton =
+    document.getElementById("deleteButton");
 
-render();
+const saveButton =
+    document.getElementById("saveButton");
 
+const cancelButton =
+    document.getElementById("cancelButton");
 
-// ==============================
-// 週間表示
-// ==============================
+const dayHeader =
+    document.getElementById("dayHeader");
+
+const timeColumn =
+    document.getElementById("timeColumn");
+
+const calendarGrid =
+    document.getElementById("calendarGrid");
+
+const eventsLayer =
+    document.getElementById("eventsLayer");
+
+const weekLabel =
+    document.getElementById("weekLabel");
+
 
 function render() {
 
     renderWeekLabel();
+
     renderDays();
+
     renderTimes();
+
     renderGrid();
+
     renderEvents();
 }
 
 
-// ==============================
-// 週タイトル
-// ==============================
-
 function renderWeekLabel() {
 
-    const start = new Date(currentWeek);
+    const monday = new Date(currentWeek);
 
-    const end = new Date(currentWeek);
-    end.setDate(end.getDate() + 6);
+    const sunday = new Date(currentWeek);
 
-    const startText =
-        `${start.getFullYear()}/${start.getMonth() + 1}/${start.getDate()}`;
-
-    const endText =
-        `${end.getFullYear()}/${end.getMonth() + 1}/${end.getDate()}`;
+    sunday.setDate(sunday.getDate() + 6);
 
     weekLabel.textContent =
-        `${startText} ～ ${endText}`;
+        `${formatDate(monday)} ～ ${formatDate(sunday)}`;
 }
 
-
-// ==============================
-// 曜日
-// ==============================
 
 function renderDays() {
 
@@ -99,7 +100,9 @@ function renderDays() {
 
         const date = new Date(currentWeek);
 
-        date.setDate(date.getDate() + i);
+        date.setDate(
+            currentWeek.getDate() + i
+        );
 
         const day = document.createElement("div");
 
@@ -110,18 +113,16 @@ function renderDays() {
         }
 
         day.innerHTML = `
-            <div>${DAY_NAMES[date.getDay()]}</div>
-            <div class="date">${date.getDate()}</div>
+            <div>${DAY_NAMES[date.getDay()]}曜日</div>
+            <div class="day-number">
+                ${date.getDate()}
+            </div>
         `;
 
         dayHeader.appendChild(day);
     }
 }
 
-
-// ==============================
-// 時間
-// ==============================
 
 function renderTimes() {
 
@@ -131,19 +132,15 @@ function renderTimes() {
 
         const time = document.createElement("div");
 
-        time.className = "time";
+        time.className = "time-label";
 
-        time.innerHTML =
-            `<span>${String(hour).padStart(2, "0")}:00</span>`;
+        time.textContent =
+            `${String(hour).padStart(2, "0")}:00`;
 
         timeColumn.appendChild(time);
     }
 }
 
-
-// ==============================
-// グリッド
-// ==============================
 
 function renderGrid() {
 
@@ -151,42 +148,41 @@ function renderGrid() {
 
     for (let i = 0; i < 7; i++) {
 
-        const column = document.createElement("div");
+        const dayColumn =
+            document.createElement("div");
 
-        column.className = "day-column";
+        dayColumn.className = "day-column";
 
-        column.dataset.day = i;
+        dayColumn.dataset.dayIndex = i;
 
-        column.addEventListener(
+        dayColumn.addEventListener(
             "dblclick",
             handleGridDoubleClick
         );
 
-        calendarGrid.appendChild(column);
+        calendarGrid.appendChild(dayColumn);
     }
 }
 
-
-// ==============================
-// 予定表示
-// ==============================
 
 function renderEvents() {
 
     eventsLayer.innerHTML = "";
 
-    const weekStart =
-        new Date(currentWeek);
+    const visibleEvents =
+        getVisibleEvents();
 
-    for (const event of events) {
+    visibleEvents.forEach(item => {
 
-        const date = new Date(event.date);
+        const event = item.event;
+
+        const date = item.date;
 
         const dayIndex =
-            getDayIndex(date, weekStart);
+            getDayIndex(date);
 
-        if (dayIndex < 0 || dayIndex > 6) {
-            continue;
+        if (dayIndex === -1) {
+            return;
         }
 
         const startMinutes =
@@ -195,36 +191,45 @@ function renderEvents() {
         const endMinutes =
             timeToMinutes(event.end);
 
-        const top =
-            startMinutes;
+        const top = startMinutes;
 
-        const height =
-            Math.max(
-                endMinutes - startMinutes,
-                30
-            );
+        const height = Math.max(
+            endMinutes - startMinutes,
+            30
+        );
 
-        const eventElement =
-            document.createElement("div");
-
-        eventElement.className = "event";
-
-        eventElement.style.left =
+        const left =
             `calc(${dayIndex} * (100% / 7) + 4px)`;
 
-        eventElement.style.width =
+        const width =
             `calc(100% / 7 - 8px)`;
 
-        eventElement.style.top =
+        const element =
+            document.createElement("div");
+
+        element.className = "event";
+
+        element.style.top =
             `${top}px`;
 
-        eventElement.style.height =
+        element.style.height =
             `${height}px`;
 
-        eventElement.style.background =
+        element.style.left =
+            left;
+
+        element.style.width =
+            width;
+
+        element.style.background =
             event.color;
 
-        eventElement.innerHTML = `
+        const repeatText =
+            event.repeat === "weekly"
+                ? "↻ 毎週"
+                : "";
+
+        element.innerHTML = `
             <div class="event-title">
                 ${escapeHtml(event.title)}
             </div>
@@ -232,69 +237,156 @@ function renderEvents() {
             <div class="event-time">
                 ${event.start} ～ ${event.end}
             </div>
+
+            ${
+                repeatText
+                    ? `<div class="event-repeat">
+                        ${repeatText}
+                       </div>`
+                    : ""
+            }
         `;
 
-        eventElement.addEventListener(
+        element.addEventListener(
             "click",
-            function(e) {
-
-                e.stopPropagation();
-
-                openEditModal(event.id);
-            }
+            () => openEditModal(event.id)
         );
 
-        eventsLayer.appendChild(eventElement);
-    }
+        eventsLayer.appendChild(element);
+    });
 }
 
 
-// ==============================
-// グリッドをダブルクリック
-// ==============================
+function getVisibleEvents() {
+
+    const result = [];
+
+    for (let i = 0; i < 7; i++) {
+
+        const date = new Date(currentWeek);
+
+        date.setDate(
+            currentWeek.getDate() + i
+        );
+
+        const dateString =
+            toDateInputValue(date);
+
+        events.forEach(event => {
+
+            if (event.repeat === "weekly") {
+
+                if (!isRepeatEventVisible(
+                    event,
+                    date
+                )) {
+                    return;
+                }
+
+                result.push({
+                    event: event,
+                    date: dateString
+                });
+
+            } else {
+
+                if (event.date === dateString) {
+
+                    result.push({
+                        event: event,
+                        date: dateString
+                    });
+                }
+            }
+        });
+    }
+
+    return result;
+}
+
+
+function isRepeatEventVisible(event, date) {
+
+    const eventDate =
+        new Date(event.date + "T00:00:00");
+
+    const targetDate =
+        new Date(date);
+
+    eventDate.setHours(0, 0, 0, 0);
+    targetDate.setHours(0, 0, 0, 0);
+
+    if (targetDate < eventDate) {
+        return false;
+    }
+
+    if (
+        event.repeatUntil &&
+        targetDate >
+        new Date(event.repeatUntil + "T00:00:00")
+    ) {
+        return false;
+    }
+
+    const targetDay =
+        targetDate.getDay();
+
+    if (
+        Array.isArray(event.repeatDays) &&
+        event.repeatDays.length > 0
+    ) {
+
+        return event.repeatDays.includes(
+            targetDay
+        );
+    }
+
+    return targetDay === eventDate.getDay();
+}
+
 
 function handleGridDoubleClick(e) {
 
-    const column =
+    const dayColumn =
         e.currentTarget;
 
     const rect =
-        column.getBoundingClientRect();
+        dayColumn.getBoundingClientRect();
 
-    const y =
+    let y =
         e.clientY - rect.top;
+
+    y = Math.max(0, Math.min(y, 1439));
 
     let minutes =
         Math.floor(y / 30) * 30;
 
-    if (minutes >= 1440) {
-        minutes = 1410;
-    }
-
-    const hour =
+    const hours =
         Math.floor(minutes / 60);
 
-    const minute =
+    const mins =
         minutes % 60;
+
+    const time =
+        `${String(hours).padStart(2, "0")}:` +
+        `${String(mins).padStart(2, "0")}`;
+
+    const dayIndex =
+        Number(dayColumn.dataset.dayIndex);
 
     const date =
         new Date(currentWeek);
 
     date.setDate(
-        date.getDate() +
-        Number(column.dataset.day)
+        currentWeek.getDate() + dayIndex
     );
 
     openAddModal(
-        date,
-        `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`
+        toDateInputValue(date),
+        time
     );
 }
 
-
-// ==============================
-// 追加モーダル
-// ==============================
 
 function openAddModal(date, time) {
 
@@ -305,24 +397,26 @@ function openAddModal(date, time) {
 
     eventTitle.value = "";
 
-    eventDate.value =
-        formatDate(date);
+    eventDate.value = date;
 
-    startTime.value =
-        time;
-
-    const end =
-        addMinutesToTime(time, 60);
+    startTime.value = time;
 
     endTime.value =
-        end;
+        addMinutesToTime(time, 60);
 
-    selectedColor =
-        "#6C8EF5";
+    repeatType.value = "none";
 
-    updateColorSelection();
+    repeatUntil.value = "";
+
+    clearWeekdaySelection();
+
+    weeklyOptions.classList.add("hidden");
 
     deleteButton.classList.add("hidden");
+
+    selectedColor = "#6C8EF5";
+
+    updateColorSelection();
 
     modal.classList.remove("hidden");
 
@@ -330,23 +424,16 @@ function openAddModal(date, time) {
 }
 
 
-// ==============================
-// 編集モーダル
-// ==============================
-
 function openEditModal(id) {
 
     const event =
-        events.find(
-            e => e.id === id
-        );
+        events.find(item => item.id === id);
 
     if (!event) {
         return;
     }
 
-    editingEventId =
-        id;
+    editingEventId = id;
 
     modalTitle.textContent =
         "予定を編集";
@@ -363,8 +450,42 @@ function openEditModal(id) {
     endTime.value =
         event.end;
 
+    repeatType.value =
+        event.repeat || "none";
+
+    repeatUntil.value =
+        event.repeatUntil || "";
+
+    clearWeekdaySelection();
+
+    if (event.repeat === "weekly") {
+
+        weeklyOptions.classList.remove(
+            "hidden"
+        );
+
+        const days =
+            event.repeatDays || [];
+
+        document.querySelectorAll(
+            ".weekday-option input"
+        ).forEach(input => {
+
+            input.checked =
+                days.includes(
+                    Number(input.value)
+                );
+        });
+
+    } else {
+
+        weeklyOptions.classList.add(
+            "hidden"
+        );
+    }
+
     selectedColor =
-        event.color;
+        event.color || "#6C8EF5";
 
     updateColorSelection();
 
@@ -372,72 +493,190 @@ function openEditModal(id) {
         "hidden"
     );
 
-    modal.classList.remove(
-        "hidden"
-    );
+    modal.classList.remove("hidden");
 }
 
 
-// ==============================
-// 保存
-// ==============================
+function closeModal() {
+
+    modal.classList.add("hidden");
+
+    editingEventId = null;
+}
+
+
+repeatType.addEventListener(
+    "change",
+    () => {
+
+        if (repeatType.value === "weekly") {
+
+            weeklyOptions.classList.remove(
+                "hidden"
+            );
+
+            setDefaultRepeatDays();
+
+        } else {
+
+            weeklyOptions.classList.add(
+                "hidden"
+            );
+        }
+    }
+);
+
+
+function setDefaultRepeatDays() {
+
+    const date =
+        new Date(eventDate.value + "T00:00:00");
+
+    const day =
+        date.getDay();
+
+    document.querySelectorAll(
+        ".weekday-option input"
+    ).forEach(input => {
+
+        input.checked =
+            Number(input.value) === day;
+    });
+}
+
+
+function clearWeekdaySelection() {
+
+    document.querySelectorAll(
+        ".weekday-option input"
+    ).forEach(input => {
+
+        input.checked = false;
+    });
+}
+
 
 saveButton.addEventListener(
     "click",
     saveEvent
 );
 
+
 function saveEvent() {
 
     const title =
         eventTitle.value.trim();
 
+    const date =
+        eventDate.value;
+
+    const start =
+        startTime.value;
+
+    const end =
+        endTime.value;
+
     if (!title) {
 
-        alert("予定名を入力してください");
+        alert("予定名を入力してください。");
+
+        return;
+    }
+
+    if (!date) {
+
+        alert("日付を選択してください。");
 
         return;
     }
 
     if (
-        startTime.value >=
-        endTime.value
+        timeToMinutes(start) >=
+        timeToMinutes(end)
     ) {
 
-        alert("終了時間は開始時間より後にしてください");
+        alert(
+            "終了時間は開始時間より後にしてください。"
+        );
 
         return;
     }
 
-    const data = {
+    const repeat =
+        repeatType.value;
 
-        title: title,
+    let repeatDays = [];
 
-        date: eventDate.value,
+    let repeatUntilValue =
+        "";
 
-        start: startTime.value,
+    if (repeat === "weekly") {
 
-        end: endTime.value,
+        repeatDays =
+            Array.from(
+                document.querySelectorAll(
+                    ".weekday-option input:checked"
+                )
+            ).map(
+                input => Number(input.value)
+            );
 
-        color: selectedColor
-    };
+        if (repeatDays.length === 0) {
 
+            alert(
+                "繰り返す曜日を1つ以上選択してください。"
+            );
+
+            return;
+        }
+
+        repeatUntilValue =
+            repeatUntil.value;
+
+        if (repeatUntilValue) {
+
+            if (
+                repeatUntilValue < date
+            ) {
+
+                alert(
+                    "繰り返し終了日は開始日以降にしてください。"
+                );
+
+                return;
+            }
+        }
+    }
 
     if (editingEventId) {
 
-        const index =
-            events.findIndex(
-                e =>
-                    e.id ===
-                    editingEventId
+        const event =
+            events.find(
+                item =>
+                    item.id === editingEventId
             );
 
-        if (index !== -1) {
+        if (event) {
 
-            events[index] = {
-                ...events[index],
-                ...data
-            };
+            event.title = title;
+
+            event.date = date;
+
+            event.start = start;
+
+            event.end = end;
+
+            event.color =
+                selectedColor;
+
+            event.repeat =
+                repeat;
+
+            event.repeatDays =
+                repeatDays;
+
+            event.repeatUntil =
+                repeatUntilValue;
         }
 
     } else {
@@ -445,9 +684,30 @@ function saveEvent() {
         events.push({
 
             id:
-                Date.now().toString(),
+                String(
+                    Date.now() +
+                    Math.random()
+                ),
 
-            ...data
+            title: title,
+
+            date: date,
+
+            start: start,
+
+            end: end,
+
+            color:
+                selectedColor,
+
+            repeat:
+                repeat,
+
+            repeatDays:
+                repeatDays,
+
+            repeatUntil:
+                repeatUntilValue
         });
     }
 
@@ -459,120 +719,112 @@ function saveEvent() {
 }
 
 
-// ==============================
-// 削除
-// ==============================
-
 deleteButton.addEventListener(
     "click",
-    function() {
-
-        if (!editingEventId) {
-            return;
-        }
-
-        const ok =
-            confirm(
-                "この予定を削除しますか？"
-            );
-
-        if (!ok) {
-            return;
-        }
-
-        events =
-            events.filter(
-                event =>
-                    event.id !==
-                    editingEventId
-            );
-
-        saveEvents();
-
-        closeModal();
-
-        render();
-    }
+    deleteEvent
 );
 
 
-// ==============================
-// モーダルを閉じる
-// ==============================
+function deleteEvent() {
+
+    if (!editingEventId) {
+        return;
+    }
+
+    const event =
+        events.find(
+            item =>
+                item.id === editingEventId
+        );
+
+    if (!event) {
+        return;
+    }
+
+    let message =
+        "この予定を削除しますか？";
+
+    if (event.repeat === "weekly") {
+
+        message =
+            "この繰り返し予定をすべて削除しますか？";
+    }
+
+    if (!confirm(message)) {
+        return;
+    }
+
+    events =
+        events.filter(
+            item =>
+                item.id !== editingEventId
+        );
+
+    saveEvents();
+
+    closeModal();
+
+    render();
+}
+
 
 cancelButton.addEventListener(
     "click",
     closeModal
 );
 
+
 modal.addEventListener(
     "click",
-    function(e) {
+    e => {
 
-        if (
-            e.target === modal
-        ) {
+        if (e.target === modal) {
             closeModal();
         }
     }
 );
 
-function closeModal() {
 
-    modal.classList.add(
-        "hidden"
+document.querySelectorAll(
+    ".color-option"
+).forEach(button => {
+
+    button.style.backgroundColor =
+        button.dataset.color;
+
+    button.addEventListener(
+        "click",
+        () => {
+
+            selectedColor =
+                button.dataset.color;
+
+            updateColorSelection();
+        }
     );
+});
 
-    editingEventId =
-        null;
-}
-
-
-// ==============================
-// 色
-// ==============================
-
-document
-    .querySelectorAll(".color-option")
-    .forEach(button => {
-
-        button.style.background =
-            button.dataset.color;
-
-        button.addEventListener(
-            "click",
-            function() {
-
-                selectedColor =
-                    this.dataset.color;
-
-                updateColorSelection();
-            }
-        );
-    });
 
 function updateColorSelection() {
 
-    document
-        .querySelectorAll(".color-option")
-        .forEach(button => {
+    document.querySelectorAll(
+        ".color-option"
+    ).forEach(button => {
 
-            button.classList.toggle(
-                "selected",
-                button.dataset.color ===
-                selectedColor
-            );
-        });
+        button.classList.toggle(
+            "selected",
+            button.dataset.color ===
+            selectedColor
+        );
+    });
 }
 
 
-// ==============================
-// 週移動
-// ==============================
-
-prevWeek.addEventListener(
+document.getElementById(
+    "prevWeek"
+).addEventListener(
     "click",
-    function() {
+    () => {
 
         currentWeek.setDate(
             currentWeek.getDate() - 7
@@ -582,9 +834,12 @@ prevWeek.addEventListener(
     }
 );
 
-nextWeek.addEventListener(
+
+document.getElementById(
+    "nextWeek"
+).addEventListener(
     "click",
-    function() {
+    () => {
 
         currentWeek.setDate(
             currentWeek.getDate() + 7
@@ -594,23 +849,20 @@ nextWeek.addEventListener(
     }
 );
 
-todayButton.addEventListener(
+
+document.getElementById(
+    "todayButton"
+).addEventListener(
     "click",
-    function() {
+    () => {
 
         currentWeek =
-            getMonday(
-                new Date()
-            );
+            getMonday(new Date());
 
         render();
     }
 );
 
-
-// ==============================
-// 保存
-// ==============================
 
 function saveEvents() {
 
@@ -620,10 +872,6 @@ function saveEvents() {
     );
 }
 
-
-// ==============================
-// 月曜日を取得
-// ==============================
 
 function getMonday(date) {
 
@@ -642,20 +890,11 @@ function getMonday(date) {
         result.getDate() + diff
     );
 
-    result.setHours(
-        0,
-        0,
-        0,
-        0
-    );
+    result.setHours(0, 0, 0, 0);
 
     return result;
 }
 
-
-// ==============================
-// 日付比較
-// ==============================
 
 function isToday(date) {
 
@@ -664,53 +903,43 @@ function isToday(date) {
 
     return (
         date.getFullYear() ===
-        today.getFullYear() &&
-
+            today.getFullYear() &&
         date.getMonth() ===
-        today.getMonth() &&
-
+            today.getMonth() &&
         date.getDate() ===
-        today.getDate()
+            today.getDate()
     );
 }
 
 
-// ==============================
-// 週内の日付位置
-// ==============================
+function getDayIndex(dateString) {
 
-function getDayIndex(
-    date,
-    weekStart
-) {
+    const date =
+        new Date(
+            dateString + "T00:00:00"
+        );
 
-    const oneDay =
-        24 * 60 * 60 * 1000;
+    const monday =
+        new Date(currentWeek);
 
     const diff =
-        Math.floor(
+        Math.round(
             (
-                new Date(
-                    date.getFullYear(),
-                    date.getMonth(),
-                    date.getDate()
-                ) -
-
-                new Date(
-                    weekStart.getFullYear(),
-                    weekStart.getMonth(),
-                    weekStart.getDate()
-                )
-            ) / oneDay
+                date - monday
+            ) /
+            (1000 * 60 * 60 * 24)
         );
+
+    if (
+        diff < 0 ||
+        diff > 6
+    ) {
+        return -1;
+    }
 
     return diff;
 }
 
-
-// ==============================
-// 時間 → 分
-// ==============================
 
 function timeToMinutes(time) {
 
@@ -724,10 +953,6 @@ function timeToMinutes(time) {
 }
 
 
-// ==============================
-// 時間を加算
-// ==============================
-
 function addMinutesToTime(
     time,
     minutes
@@ -737,14 +962,11 @@ function addMinutesToTime(
         timeToMinutes(time) +
         minutes;
 
-    if (total >= 1440) {
-        total = 1439;
-    }
+    total =
+        Math.min(total, 1439);
 
     const hour =
-        Math.floor(
-            total / 60
-        );
+        Math.floor(total / 60);
 
     const minute =
         total % 60;
@@ -757,37 +979,43 @@ function addMinutesToTime(
 }
 
 
-// ==============================
-// Date → YYYY-MM-DD
-// ==============================
-
 function formatDate(date) {
 
     return (
-        date.getFullYear() +
-        "-" +
-        String(
+        `${date.getFullYear()}/` +
+        `${String(
             date.getMonth() + 1
-        ).padStart(2, "0") +
-        "-" +
-        String(
+        ).padStart(2, "0")}/` +
+        `${String(
             date.getDate()
-        ).padStart(2, "0")
+        ).padStart(2, "0")}`
     );
 }
 
 
-// ==============================
-// HTMLエスケープ
-// ==============================
+function toDateInputValue(date) {
+
+    return (
+        `${date.getFullYear()}-` +
+        `${String(
+            date.getMonth() + 1
+        ).padStart(2, "0")}-` +
+        `${String(
+            date.getDate()
+        ).padStart(2, "0")}`
+    );
+}
+
 
 function escapeHtml(text) {
 
     const div =
         document.createElement("div");
 
-    div.textContent =
-        text;
+    div.textContent = text;
 
     return div.innerHTML;
 }
+
+
+render();
